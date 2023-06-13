@@ -3,7 +3,7 @@ const { relayInit, getPublicKey, getEventHash, getSignature } = require("nostr-t
 require("websocket-polyfill");
 
 /* Q-1: 自分の秘密鍵をhex形式に変換して、ここに設定しよう */
-const PRIVATE_KEY_HEX = ???;
+const PRIVATE_KEY_HEX = '1cf02a1e8b2a1212b2966e4abe58e14b88e35c8af60f867a6ba29061fe95c9e7'; //いやん
 
 const relayUrl = "wss://relay-jp.nostr.wirednet.jp";
 
@@ -15,16 +15,16 @@ const composePost = (content) => {
   const pubkey = getPublicKey(PRIVATE_KEY_HEX); // 公開鍵は秘密鍵から導出できる
   const ev = {
     /* Q-2: イベントの pubkey, kind, content を設定してみよう */
-    pubkey: ???,
-    kind: ???,
-    content: ???,
+    pubkey:pubkey,
+    kind:1, 
+    content:content,
     tags: [],
     created_at: currUnixtime(),
   }
   /* Q-3: イベントのハッシュ値を求めてみよう */
-  const id = ???
+  const id = getEventHash(ev);
   /* Q-4: イベントの署名を生成してみよう */
-  const sig = ???
+  const sig = getSignature(ev, PRIVATE_KEY_HEX);
 
   return {...ev, id, sig} // イベントにID(ハッシュ値)と署名を設定
 
@@ -47,7 +47,7 @@ const main = async (content) => {
   console.log(post);
 
   /* Q-5: Relayオブジェクトのメソッドを使って、イベントを発行してみよう */
-  const pub = ???;
+  const pub = relay.publish(post);
 
   pub.on('ok', () => {
     console.log("succeess!");
