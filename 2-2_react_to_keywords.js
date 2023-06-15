@@ -51,7 +51,7 @@ const main = async (targetWord) => {
   await relay.connect();
 
   /* Q-2: すべてのテキスト投稿を購読しよう */
-  const sub = relay.sub([{}]);
+  const sub = relay.sub([{"kinds":[1]}]);
   sub.on("event", (ev) => {
     try {
       /* Q-3: 「受信した投稿のcontentに対象の単語が含まれていたら、
