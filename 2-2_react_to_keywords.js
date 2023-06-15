@@ -7,7 +7,7 @@ const {
 require("websocket-polyfill");
 
 /* Bot用の秘密鍵をここに設定 */
-const BOT_PRIVATE_KEY_HEX = ???;
+const BOT_PRIVATE_KEY_HEX = "6183f8c4a5fbd37fd27c20fbe3fcb8f2a5bb68c4d0aa26c0ff40efd9212d6b58";
 
 const relayUrl = "wss://relay-jp.nostr.wirednet.jp";
 
@@ -18,9 +18,12 @@ const relayUrl = "wss://relay-jp.nostr.wirednet.jp";
 const composeReaction = (targetEvent) => {
   /* Q-1: リアクションイベントのフィールドを埋めよう  */
   const ev = {
-    kind: ???,
-    content: ???,
-    tags: ???,
+    kind: 7,
+    content: "+",
+    tags:[
+      ["e",targetEvent.id,""],
+      ["p",targetEvent.pubkey,""],
+    ],
     created_at: currUnixtime(),
   };
 
@@ -48,13 +51,19 @@ const main = async (targetWord) => {
   await relay.connect();
 
   /* Q-2: すべてのテキスト投稿を購読しよう */
-  const sub = ???;
+  const sub = relay.sub([{}]);
   sub.on("event", (ev) => {
     try {
       /* Q-3: 「受信した投稿のcontentに対象の単語が含まれていたら、
               その投稿イベントにリアクションする」ロジックを完成させよう */
       // ヒント: ある文字列に指定の単語が含まれているかを判定するには、includes()メソッドを使うとよいでしょう
-      ???;
+      //console.log("target word="+targetWord);
+      //console.log("ev="+JSON.stringify(ev));
+      //console.log("ev.content="+ev.content);
+      if(ev.content.includes(targetWord)){
+        const post = composeReaction(ev);
+        publishToRelay(relay, post);
+      }
     } catch (err) {
       console.error(err);
     }
