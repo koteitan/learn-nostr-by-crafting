@@ -8,7 +8,7 @@ const {
 require("websocket-polyfill");
 
 /* Q-1: Bot用に新しい秘密鍵を生成して、ここに設定しよう */
-const BOT_PRIVATE_KEY_HEX = ???;
+const BOT_PRIVATE_KEY_HEX = "6183f8c4a5fbd37fd27c20fbe3fcb8f2a5bb68c4d0aa26c0ff40efd9212d6b58";
 
 const relayUrl = "wss://relay-jp.nostr.wirednet.jp";
 
@@ -18,16 +18,16 @@ const relayUrl = "wss://relay-jp.nostr.wirednet.jp";
 const composeMetadata = () => {
   /* Q-2: Botアカウントのプロフィールを設定しよう  */
   const profile = {
-    name: "", // スクリーンネーム
-    display_name: "", // 表示名
-    about: "", // 説明欄(bio)
+    name: "koteitan-enshu-bot", // スクリーンネーム
+    display_name: "こていたんえんしゅうぼっと", // 表示名
+    about: "botつくるよ", // 説明欄(bio)
   };
 
   /* Q-3: メタデータ(プロフィール)イベントのフィールドを埋めよう */
   // pubkeyは以下の処理で自動で設定されるため、ここで設定する必要はありません
   const ev = {
-    kind: ???,
-    content: ???,
+    kind: 0,
+    content: JSON.stringify(profile),
     tags: [],
     created_at: currUnixtime(),
   };
