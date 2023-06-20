@@ -6,7 +6,7 @@ const {
 } = require("nostr-tools");
 require("websocket-polyfill");
 
-const DEBUG_FLAG = false;
+const DEBUG_FLAG = true;
 
 const trace = (str) => {
   if(DEBUG_FLAG){
@@ -59,17 +59,12 @@ const main = async () => {
   relay.on("error", () => {
     console.error("failed to connect");
   });
-  const relay2 = relayInit(relayUrl);
-  relay2.on("error", () => {
-    console.error("failed to connect");
-  });
 
   await relay.connect();
-  await relay2.connect();
 
   /* Q-2: すべてのテキスト投稿を購読しよう */
   const sub = relay.sub([{"kinds":[1]}]);
-  sub.on("event", (ev) => {
+  sub.on("event", async (ev) => {
     try {
       /* Q-3: 「受信した投稿のcontentに対象の単語が含まれていたら、
               その投稿イベントにリアクションする」ロジックを完成させよう */
@@ -90,6 +85,11 @@ const main = async () => {
           }
           if(replytohex != ""){ // etag was found
             trace("e tags found, hex = "+replytohex);
+            const relay2 = relayInit(relayUrl);
+            relay2.on("error", () => {
+              console.error("failed to connect");
+            });
+            await relay2.connect();
             const sub2 = relay2.sub([{"kinds":[1],"ids":[replytohex]}]);
             sub2.on("event", (ev2) => {
               trace("ev2 = "+JSON.stringify(ev2));
@@ -105,6 +105,7 @@ const main = async () => {
                 trace(JSON.stringify(post));
                 publishToRelay(relay, post);
               }//if ぬるぽ
+              relay2.close();
             }); // sub.on
           }//if(replytohex != "")
         } // Array.isArray(ev.tags)
