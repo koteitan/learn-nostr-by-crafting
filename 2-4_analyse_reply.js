@@ -45,7 +45,7 @@ const composeReaction = (targetEvent, dur) => {
     kind: 1,
     content:
       "ただいまの ｶﾞｯ の記録は―\n"+
-      dur + " 秒\n"+
+      dur + " ミリ秒\n"+
       "でございます"
     ,
     tags:[
@@ -70,6 +70,7 @@ const publishToRelay = (relay, ev) => {
   });
 };
 
+const nurupotimemap = new Map();
 const main = async () => {
   const relay = relayInit(relayUrl);
   relay.on("error", () => {
@@ -77,13 +78,29 @@ const main = async () => {
   });
   await relay.connect();
 
-  /* Q-2: すべてのテキスト投稿を購読しよう */
-  const sub = relay.sub([{"kinds":[1]}]);
-  sub.on("event", (ev) => {
+  /* search nurupo */
+  const subnurupo = relay.sub([{"kinds":[1]}]);
+  subnurupo.on("event", (ev) => {
+    var now = currUnixtimems();
     try {
       //trace("ev="+JSON.stringify(ev));
       //trace("ev.content="+ev.content);
-      if(ev.content.includes("ｶﾞｯ")){
+      if(ev.content == "ぬるぽ"){
+        nurupotimemap.set(ev.id, now);
+      }
+    }catch(err){
+      console.error(err);
+    }
+  });//subnurupo.on
+
+  /* search ga */
+  const subga     = relay.sub([{"kinds":[1]}]);
+  subga.on("event", (ev) => {
+    try {
+      //trace("ev="+JSON.stringify(ev));
+      //trace("ev.content="+ev.content);
+      if(ev.content == "ｶﾞｯ"){
+        var gatime = currUnixtimems();
         trace("ga found");
         if(Array.isArray(ev.tags)){ // tag was found
           //find etag
@@ -96,25 +113,22 @@ const main = async () => {
           }
           if(replytohex != ""){ // etag was found
             trace("e tags found, hex = "+replytohex);
-            const sub2 = relay.sub([{"kinds":[1],"ids":[replytohex]}]);
-            sub2.on("event", (ev2) => {
-              trace("ev2 = "+JSON.stringify(ev2));
-              if(ev2.content.includes("ぬるぽ")){
-                trace("nurupo found");
-                var nurupotime = ev2.created_at;
-                var gatime = ev.created_at;
-                var dur = gatime-nurupotime;
-                trace("gatime="+gatime);
-                trace("nltime="+nurupotime);
-                trace("dur   ="+dur);
-                if (isSafeToReply(ev)) {
-                  const post = composeReaction(ev, dur);
-                  trace(JSON.stringify(post));
-                  publishToRelay(relay, post);
-                }//if issafe
-              }//if ぬるぽ
-              sub2.unsub();
-            }); // sub.on
+            var nurupotime = nurupotimemap.get(replytohex);
+            if(nurupotime !== undefined){
+              trace("nurupo found");
+              nurupotimemap.delete(replytohex);
+              var dur = gatime-nurupotime;
+              trace("gatime="+gatime);
+              trace("nltime="+nurupotime);
+              trace("dur   ="+dur);
+              if (isSafeToReply(ev)) {
+                const post = composeReaction(ev, dur);
+                trace(JSON.stringify(post));
+                publishToRelay(relay, post);
+              }//if issafe
+            }else{
+              trace("no nurupo");
+            }//if ぬるぽ
           }//if(replytohex != "")
         } // Array.isArray(ev.tags)
       }// if includes
