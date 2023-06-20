@@ -106,9 +106,11 @@ const main = async () => {
   }]);
   subrank.on("event", (ev) => {
     if(ev.content.includes("ranking")){
-      const post = composeRanking(ev);
-      trace(JSON.stringify(post));
-      publishToRelay(relay, post);
+      if (isSafeToReply(ev)) {
+        const post = composeRanking(ev);
+        trace(JSON.stringify(post));
+        publishToRelay(relay, post);
+      }
     }
   });
 
