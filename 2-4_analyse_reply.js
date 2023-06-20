@@ -1,7 +1,6 @@
-const { currUnixtime, getCliArg } = require("./utils.js");
+const { currUnixtime, currUnixtimems} = require("./utils.js");
 const {
   relayInit,
-  getPublicKey,
   finishEvent
 } = require("nostr-tools");
 require("websocket-polyfill");
@@ -13,6 +12,23 @@ const trace = (str) => {
     console.log(str);
   }
 };
+
+/* 暴走・無限リプライループ対策 */
+const COOL_TIME_DUR_SEC = 60
+const lastReplyTimePerPubkey = new Map()
+const isSafeToReply = ({ pubkey, created_at }) => {
+  const now = currUnixtime()
+  if (created_at < now - COOL_TIME_DUR_SEC) {
+    return false;
+  }
+
+  const lastReplyTime = lastReplyTimePerPubkey.get(pubkey)
+  if (lastReplyTime !== undefined && now - lastReplyTime < COOL_TIME_DUR_SEC) {
+    return false
+  }
+  lastReplyTimePerPubkey.set(pubkey, now)
+  return true
+}
 
 /* Bot用の秘密鍵をここに設定 */
 const BOT_PRIVATE_KEY_HEX = "6183f8c4a5fbd37fd27c20fbe3fcb8f2a5bb68c4d0aa26c0ff40efd9212d6b58";
@@ -101,9 +117,11 @@ const main = async () => {
                 trace("gatime="+gatime);
                 trace("nltime="+nurupotime);
                 trace("dur   ="+dur);
-                const post = composeReaction(ev, dur);
-                trace(JSON.stringify(post));
-                publishToRelay(relay, post);
+                if (isSafeToReply(ev)) {
+                  const post = composeReaction(ev, dur);
+                  trace(JSON.stringify(post));
+                  publishToRelay(relay, post);
+                }
               }//if ぬるぽ
               relay2.close();
             }); // sub.on
