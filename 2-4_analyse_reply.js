@@ -75,17 +75,12 @@ const main = async () => {
   relay.on("error", () => {
     console.error("failed to connect");
   });
-
   await relay.connect();
 
   /* Q-2: すべてのテキスト投稿を購読しよう */
   const sub = relay.sub([{"kinds":[1]}]);
-  sub.on("event", async (ev) => {
+  sub.on("event", (ev) => {
     try {
-      /* Q-3: 「受信した投稿のcontentに対象の単語が含まれていたら、
-              その投稿イベントにリアクションする」ロジックを完成させよう */
-      // ヒント: ある文字列に指定の単語が含まれているかを判定するには、includes()メソッドを使うとよいでしょう
-      //trace("target word="+targetWord);
       //trace("ev="+JSON.stringify(ev));
       //trace("ev.content="+ev.content);
       if(ev.content.includes("ｶﾞｯ")){
@@ -101,12 +96,7 @@ const main = async () => {
           }
           if(replytohex != ""){ // etag was found
             trace("e tags found, hex = "+replytohex);
-            const relay2 = relayInit(relayUrl);
-            relay2.on("error", () => {
-              console.error("failed to connect");
-            });
-            await relay2.connect();
-            const sub2 = relay2.sub([{"kinds":[1],"ids":[replytohex]}]);
+            const sub2 = relay.sub([{"kinds":[1],"ids":[replytohex]}]);
             sub2.on("event", (ev2) => {
               trace("ev2 = "+JSON.stringify(ev2));
               if(ev2.content.includes("ぬるぽ")){
@@ -121,9 +111,9 @@ const main = async () => {
                   const post = composeReaction(ev, dur);
                   trace(JSON.stringify(post));
                   publishToRelay(relay, post);
-                }
+                }//if issafe
               }//if ぬるぽ
-              relay2.close();
+              sub2.unsub();
             }); // sub.on
           }//if(replytohex != "")
         } // Array.isArray(ev.tags)
